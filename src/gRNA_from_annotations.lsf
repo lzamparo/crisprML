@@ -2,7 +2,7 @@
 #BSUB -J mm10_guide_test
 #BSUB -n 1
 #BSUB -R rusage[mem=100]
-#BSUB -W 4:00
+#BSUB -W 72:00
 #BSUB -o %J.stdout
 #BSUB -eo %J.stderr
 
@@ -13,4 +13,6 @@ outdir="/data/leslie/zamparol/crisprML/results/gRNAs/mm10/"
 
 
 cd ~/projects/crisprML/src
+bash pre_move_to_compute.sh
 python gRNA_from_annotations.py -a $annotations -i $infile -o $outdir 
+bash post_move_to_warm.sh
