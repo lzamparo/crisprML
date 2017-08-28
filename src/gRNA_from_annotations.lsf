@@ -13,6 +13,10 @@ outdir="/data/leslie/zamparol/crisprML/results/gRNAs/mm10/"
 
 
 cd ~/projects/crisprML/src
-bash pre_move_to_compute.sh
-python gRNA_from_annotations.py -a $annotations -i $infile -o $outdir 
+
+set +o nounset
+source activate py2
+python gRNA_from_annotations.py -a $annotations -i $infile -o $outdir
+source deactivate
+set -o nounset
 bash post_move_to_warm.sh
