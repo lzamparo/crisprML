@@ -1,11 +1,4 @@
 #!/bin/bash
-#BSUB -J mm10_feature_gen_test
-#BSUB -n 1
-#BSUB -R rusage[mem=100]
-#BSUB -W 3:00
-#BSUB -o %J.stdout
-#BSUB -eo %J.stderr
-
 
 
 # dataset sgRNA fields
@@ -22,7 +15,4 @@ cd ~/projects/crisprML/src
 set +o nounset
 source activate py2
 python specificity_score_distance_neighbors.py -i $input -o $outdir -k $kmers -t $trie -m $mismatch -p $pam
-source deactivate
-set -o nounset
-bash post_move_to_warm.sh
 

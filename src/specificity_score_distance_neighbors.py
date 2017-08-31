@@ -17,6 +17,7 @@ __author__ = 'Alexendar Perez'
 import sys
 import pickle
 import argparse
+import pdb
 
 import numpy as np
 import pandas as pd
@@ -368,6 +369,7 @@ def main():
 
 	# user inputs
 	in_file,outdir,kmer_counts_file,trie_file,mismatch_score,pam_score,header,sequence_field,cpf1 = arg_parser()
+	pdb.set_trace()
 
 	# data read in
 	data = sequence_file_read_in(in_file)
