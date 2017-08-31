@@ -9,12 +9,12 @@
 
 
 # dataset sgRNA fields
-input=
-outdir=
-kmers=
-trie=
-mismatch=
-pam=
+input="/data/leslie/zamparol/crisprML/results/gRNAs/mm10/Cas9_sequences_fitting_annotation.txt"
+outdir="/data/leslie/zamparol/crisprML/results/gRNAs/mm10/"
+kmers="/data/leslie/zamparol/crisprML/kmers/mm10/Cas9/mm10_all_kmers.txt"
+trie="/data/leslie/zamparol/crisprML/tries/mm10_all_trie.dat"
+mismatch="/data/leslie/zamparol/crisprML/CFD_scoring/mismatch_score.pkl"
+pam="/data/leslie/zamparol/crisprML/CFD_scoring/pam_scores.pkl"
 
 
 cd ~/projects/crisprML/src
