@@ -369,7 +369,7 @@ def main():
 
 	# user inputs
 	in_file,outdir,kmer_counts_file,trie_file,mismatch_score,pam_score,header,sequence_field,cpf1 = arg_parser()
-	pdb.set_trace()
+
 
 	# data read in
 	data = sequence_file_read_in(in_file)
@@ -379,26 +379,32 @@ def main():
 	sequence_data = sequence_data.reshape(sequence_data.shape[0],1)
 	final_header = np.array(['sequence']).reshape(1,1)
 
+	pdb.set_trace()
 	# compute or load kmer dictionary object
 	kmer_dictionary = kmer_exact_occurrence_dictionary(kmer_counts_file)
 
 	# load CFD scoring matrices
+	pdb.set_trace()
 	mm_scores, pam_scores = get_mm_pam_scores(mismatch_score, pam_score)
 
 	# load trie
+	pdb.set_trace()
 	tr = load_trie(trie_file)
 
 	# compute specificity score and mismatch neighborhoods
+	pdb.set_trace()
 	sequence_data,final_header = compute_specificity_score_and_mismatch_neighborhoods(sequence_data,final_header,
 																					  kmer_dictionary,tr,mm_scores,
 																					  pam_scores,cpf1)
 
 	# generate final feature arrays
+	pdb.set_trace()
 	final_feature_array = np.concatenate((final_header,sequence_data),0)
 	#final_feature_array_standardized = np.concatenate((final_header,sequence_data_standardized),0)
 	sys.stdout.write('final feature arrays generated\n')
 
 	# write output to csv
+	pdb.set_trace()
 	column_length = final_feature_array.shape[1]
 	np.savetxt('%s/raw_features_computed_%s.csv' % (outdir,in_file.split('/')[-1].split('.')[0]), final_feature_array,
 			   fmt='%' + '%ss' % (column_length), delimiter=',')
