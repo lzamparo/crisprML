@@ -78,7 +78,7 @@ def arg_parser():
 	parser.add_argument('-m','--mismatch',help='absolute filepath to mismatch_score.pkl for CFD',required=True)
 	parser.add_argument('-p','--pam',help='absolute filepath to pam_scores.pkl for CFD',required=True)
 	parser.add_argument('--header',help='boolian value of whether header is present in infile, default = True',default=True)
-	parser.add_argument('--sequence_field',help='if sequences not in first field of file, default = None',default=None)
+	parser.add_argument('--sequence_field',help='if sequences not in first field of file, default = 0',default=0)
 	parser.add_argument('--cpf1',help='cpf1 enzyme processing',default=False)
 
 	args = parser.parse_args()
