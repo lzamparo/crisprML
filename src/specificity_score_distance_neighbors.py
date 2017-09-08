@@ -17,7 +17,6 @@ __author__ = 'Alexendar Perez'
 import sys
 import pickle
 import argparse
-import pdb
 
 import numpy as np
 import pandas as pd
@@ -177,6 +176,9 @@ def load_trie(trie_file):
 
 	return tr
 
+# TODO: this is better stored as a DB; it also does not get used as the docstring 
+# suggests: they keys are parts[1], which are *genomic positions*, and the values
+# are kmers.
 def kmer_exact_occurrence_dictionary(kmer_counts_file):
 	"""generate genome-wide kmer occurrence dictionary
 
@@ -260,6 +262,7 @@ def compute_specificity_score_and_mismatch_neighborhoods(sequence_data, final_he
 			on_target_sequence = '%sNGG' % (on_target_sequence)
 
 		# query trie
+		# TODO: what format is query_sequence??
 		query_sequence = tr.get_approximate(on_target_sequence, distance)
 
 		# specificity score lists
@@ -379,32 +382,26 @@ def main():
 	sequence_data = sequence_data.reshape(sequence_data.shape[0],1)
 	final_header = np.array(['sequence']).reshape(1,1)
 
-	pdb.set_trace()
 	# compute or load kmer dictionary object
 	kmer_dictionary = kmer_exact_occurrence_dictionary(kmer_counts_file)
 
 	# load CFD scoring matrices
-	pdb.set_trace()
 	mm_scores, pam_scores = get_mm_pam_scores(mismatch_score, pam_score)
 
 	# load trie
-	pdb.set_trace()
 	tr = load_trie(trie_file)
 
 	# compute specificity score and mismatch neighborhoods
-	pdb.set_trace()
 	sequence_data,final_header = compute_specificity_score_and_mismatch_neighborhoods(sequence_data,final_header,
 																					  kmer_dictionary,tr,mm_scores,
 																					  pam_scores,cpf1)
 
 	# generate final feature arrays
-	pdb.set_trace()
 	final_feature_array = np.concatenate((final_header,sequence_data),0)
 	#final_feature_array_standardized = np.concatenate((final_header,sequence_data_standardized),0)
 	sys.stdout.write('final feature arrays generated\n')
 
 	# write output to csv
-	pdb.set_trace()
 	column_length = final_feature_array.shape[1]
 	np.savetxt('%s/raw_features_computed_%s.csv' % (outdir,in_file.split('/')[-1].split('.')[0]), final_feature_array,
 			   fmt='%' + '%ss' % (column_length), delimiter=',')
