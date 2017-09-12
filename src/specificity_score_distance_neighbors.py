@@ -15,8 +15,11 @@ __author__ = 'Alexendar Perez'
 #################
 
 import sys
+import os
 import pickle
 import argparse
+import sqlite3
+import gzip
 
 import numpy as np
 import pandas as pd
@@ -180,25 +183,72 @@ def load_trie(trie_file):
 # suggests: they keys are parts[1], which are *genomic positions*, and the values
 # are kmers.
 def kmer_exact_occurrence_dictionary(kmer_counts_file):
-	"""generate genome-wide kmer occurrence dictionary
+	"""generate genome-wide kmer occurrence dictionary as an sqlite database.  If the 
+	filename suggests that the kmer_counts_file is already a .db, then just return the cursor.
 
-	:param kmer_counts_file: absolute filepath to XXX_all_kmers_counted.txt file
-	:return: dictionary object with kmers as keys and their occurrence in the genome as values
+	:param kmer_counts_file: absolute filepath to XXX_all_kmers_counted.txt.gz file, or a .db file
+	:return: connection object to the kmer-count dictionary 
 
 	"""
+
+
+	if kmer_counts_file.endswith('db'):
+		conn = sqlite3.connect(sqlite_file)
+		return conn
+	
+
 	kmer_dictionary = {}
-	with open(kmer_counts_file, 'r') as kmers:
+	records = 0
+
+	sqlite_file = 'hg38_kmers.db'
+	table_name = 'kmer_counts'  
+	first = 'kmer' 
+	first_type = 'text'  
+	second = 'count'
+	second_type = 'INTEGER'
+
+	# Connect to the database file
+	try:
+		conn = sqlite3.connect(os.path.join(os.path.dirname(kmer_counts_file),sqlite_file))
+	except: 
+		sys.stdout.write('Cannot open the sqlite db! \n')
+		sys.exit()
+		
+	c = conn.cursor()
+
+	# Create the table
+	c.execute('CREATE TABLE {tn} ({fc} {ft}, {sc} {st})'\
+        .format(tn=table_name, fc=first, ft=first_type, sc=second, st=second_type))
+
+	my_open = gzip.open if kmer_counts_file.endswith('.gz') else open
+
+	with my_open(kmer_counts_file, 'r') as kmers:
 		for line in kmers:
 			clean_line = line.lstrip().rstrip()
 			parts = clean_line.split()
-			if kmer_dictionary.has_key(parts[1]):
+			if kmer_dictionary.has_key(parts[0]):
 				sys.stdout.write('kmer duplication detected %s %s \n' % (parts[0], parts[1]))
 			else:
-				kmer_dictionary[parts[1]] = parts[0]
+				kmer_dictionary[parts[0]] = parts[1]
+
+			records += 1
+
+			# dump dict into the database, then reset it
+			if records > 10000:
+				for k, v in kmer_dictionary.items():
+					c.execute("INSERT INTO kmer_counts VALUES (?,?)", (k, v))
+				kmer_dictionary = {}
+				records = 0
+
+		# handle the remaining records
+		for k, v in kmer_dictionary.items():
+			c.execute("INSERT INTO kmer_counts VALUES (?,?)", (k, v))
 
 		sys.stdout.write('kmer dictionary generated \n')
-
-	return kmer_dictionary
+	
+	# commit the changes to the db
+	conn.commit()
+	return conn
 
 def add_features_to_feature_array(feature_array,augmenting_array):
 	"""add new features to features array
@@ -234,13 +284,23 @@ def hamming_distance(s1, s2):
 	assert len(s1) == len(s2)
 	return sum(c1 != c2 for c1, c2 in zip(s1, s2))
 
-def compute_specificity_score_and_mismatch_neighborhoods(sequence_data, final_header, kmer_dictionary, tr, mm_scores,
+
+def query_db(c, key):
+	"""
+	Query the kmer file sqlite3 database with cursor `c` to extract the count associated with kmer `key`
+	"""
+	result = c.execute("SELECT count FROM kmer_counts WHERE kmer == ?", (key,))
+	result_list = result.fetchall()
+	assert(len(res_list) == 1)
+	return vl[0][0]	
+
+def compute_specificity_score_and_mismatch_neighborhoods(sequence_data, final_header, kmer_dictionary_cursor, tr, mm_scores,
 														 pam_scores,cpf1):
 	"""compute GuideScan based features
 
 	:param sequence_data: numpy array with sequence data in 0 field
 	:param final_header: numpy array with header information
-	:param kmer_dictionary: dictionary object with kmers as keys and occurrences in genome as values; output of kmer_exact_occurrence_dictionary()
+	:param kmer_dictionary_cursor: cursor for the sqlite database; output of kmer_exact_occurrence_dictionary()
 	:param tr: trie datastructure from load_trie() function
 	:param mm_scores: first output of get_mm_pam_scores()
 	:param pam_scores: second output of get_mm_pam_scores()
@@ -262,7 +322,6 @@ def compute_specificity_score_and_mismatch_neighborhoods(sequence_data, final_he
 			on_target_sequence = '%sNGG' % (on_target_sequence)
 
 		# query trie
-		# TODO: what format is query_sequence??
 		query_sequence = tr.get_approximate(on_target_sequence, distance)
 
 		# specificity score lists
@@ -275,7 +334,7 @@ def compute_specificity_score_and_mismatch_neighborhoods(sequence_data, final_he
 
 		for i in query_sequence:
 			# occurrence of sequence in genome
-			ot_sequence_occurence = int(kmer_dictionary[i[0]])
+			ot_sequence_occurence = int(query_db(kmer_dictionary_cursor,i[0]))
 
 			if hamming_distance(on_target_sequence, i[0]) <= distance:
 				# record key
@@ -384,6 +443,7 @@ def main():
 
 	# compute or load kmer dictionary object
 	kmer_dictionary = kmer_exact_occurrence_dictionary(kmer_counts_file)
+	kmer_dictionary_cursor = kmer_dictionary.cursor()
 
 	# load CFD scoring matrices
 	mm_scores, pam_scores = get_mm_pam_scores(mismatch_score, pam_score)
@@ -393,7 +453,7 @@ def main():
 
 	# compute specificity score and mismatch neighborhoods
 	sequence_data,final_header = compute_specificity_score_and_mismatch_neighborhoods(sequence_data,final_header,
-																					  kmer_dictionary,tr,mm_scores,
+																					  kmer_dictionary_cursor,tr,mm_scores,
 																					  pam_scores,cpf1)
 
 	# generate final feature arrays
@@ -411,6 +471,9 @@ def main():
 
 	sys.stdout.write('final arrays written to csv\n%s\n' % ('%s/features_computed_%s.csv' % (outdir,in_file.split('/')[-1].split('.')[0])))
 
+	# close the kmer_dictionary db
+	kmer_dictionary.close()
+	
 	# completion stdout
 	sys.stdout.write('feature generation for %s complete\n' % (in_file))
 
