@@ -291,8 +291,8 @@ def query_db(c, key):
 	"""
 	result = c.execute("SELECT count FROM kmer_counts WHERE kmer == ?", (key,))
 	result_list = result.fetchall()
-	assert(len(res_list) == 1)
-	return vl[0][0]	
+	assert(len(result_list) == 1)
+	return result_list[0][0]	
 
 def compute_specificity_score_and_mismatch_neighborhoods(sequence_data, final_header, kmer_dictionary_cursor, tr, mm_scores,
 														 pam_scores,cpf1):
