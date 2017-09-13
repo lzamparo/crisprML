@@ -289,10 +289,14 @@ def query_db(c, key):
 	"""
 	Query the kmer file sqlite3 database with cursor `c` to extract the count associated with kmer `key`
 	"""
-	result = c.execute("SELECT count FROM kmer_counts WHERE kmer == ?", (key,))
-	result_list = result.fetchall()
-	assert(len(result_list) == 1)
-	return result_list[0][0]	
+	try:
+		result = c.execute("SELECT count FROM kmer_counts WHERE kmer == ?", (key,))
+		result_list = result.fetchall()
+		assert(len(result_list) == 1)
+		return result_list[0][0]	
+	except AssertionError:
+		sys.stderr.write('querying db returned loads of hits for {0}: {1}'.format(key, ' '.join([str(r) for r in result_list])))
+		
 
 def compute_specificity_score_and_mismatch_neighborhoods(sequence_data, final_header, kmer_dictionary_cursor, tr, mm_scores,
 														 pam_scores,cpf1):
