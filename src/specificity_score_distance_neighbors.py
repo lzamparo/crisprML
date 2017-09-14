@@ -294,7 +294,7 @@ def query_db(c, key):
 		result_list = result.fetchall()
 		assert(len(result_list) == 1)
 		return result_list[0][0]	
-	except AssertionError:
+	except:
 		sys.stderr.write('querying db returned loads of hits for {0}: {1}'.format(key, ' '.join([str(r) for r in result_list])))
 		
 
