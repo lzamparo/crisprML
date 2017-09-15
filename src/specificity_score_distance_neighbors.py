@@ -226,15 +226,15 @@ def kmer_exact_occurrence_dictionary(kmer_counts_file):
 		for line in kmers:
 			clean_line = line.lstrip().rstrip()
 			parts = clean_line.split()
-			if kmer_dictionary.has_key(parts[0]):
-				sys.stdout.write('kmer duplication detected %s %s \n' % (parts[0], parts[1]))
+			if kmer_dictionary.has_key(parts[1]):
+				sys.stdout.write('kmer duplication detected %s %s \n' % (parts[1], parts[0]))
 			else:
-				kmer_dictionary[parts[0]] = parts[1]
+				kmer_dictionary[parts[1]] = parts[0]
 
 			records += 1
 
 			# dump dict into the database, then reset it
-			if records > 10000:
+			if records > 100000:
 				for k, v in kmer_dictionary.items():
 					c.execute("INSERT INTO kmer_counts VALUES (?,?)", (k, v))
 				kmer_dictionary = {}
@@ -292,8 +292,10 @@ def query_db(c, key):
 	try:
 		result = c.execute("SELECT count FROM kmer_counts WHERE kmer == ?", (key,))
 		result_list = result.fetchall()
-		assert(len(result_list) == 1)
-		return result_list[0][0]	
+		if len(result_list) == 1:
+			return result_list[0][0]
+		elif len(results_list) == 0:
+			return 0
 	except:
 		sys.stderr.write('querying db returned loads of hits for {0}: {1}'.format(key, ' '.join([str(r) for r in result_list])))
 		
