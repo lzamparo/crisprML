@@ -24,7 +24,7 @@ import gzip
 import numpy as np
 import pandas as pd
 from Bio import trie
-import pdb
+
 
 #############################
 #							#
@@ -330,7 +330,6 @@ def compute_specificity_score_and_mismatch_neighborhoods(sequence_data, final_he
 
 		# query trie, get all near matches
 		query_sequences = tr.get_approximate(on_target_sequence, distance)
-		pdb.set_trace()
 
 		# specificity score lists
 		cfd_lst, writeout_lst = [], []
