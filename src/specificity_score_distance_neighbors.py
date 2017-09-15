@@ -193,7 +193,7 @@ def kmer_exact_occurrence_dictionary(kmer_counts_file):
 
 
 	if kmer_counts_file.endswith('db'):
-		conn = sqlite3.connect(sqlite_file)
+		conn = sqlite3.connect(kmer_counts_file)
 		return conn
 	
 
