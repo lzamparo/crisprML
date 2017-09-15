@@ -295,7 +295,7 @@ def query_db(c, key):
 		result_list = result.fetchall()
 		if len(result_list) == 1:
 			return result_list[0][0]
-		elif len(results_list) == 0:
+		elif len(result_list) == 0:
 			return 0
 	except:
 		sys.stderr.write('querying db returned loads of hits for {0}: {1}'.format(key, ' '.join([str(r) for r in result_list])))
@@ -328,8 +328,8 @@ def compute_specificity_score_and_mismatch_neighborhoods(sequence_data, final_he
 		else:
 			on_target_sequence = '%sNGG' % (on_target_sequence)
 
-		# query trie
-		query_sequence = tr.get_approximate(on_target_sequence, distance)
+		# query trie, get all near matches
+		query_sequences = tr.get_approximate(on_target_sequence, distance)
 		pdb.set_trace()
 
 		# specificity score lists
@@ -340,7 +340,7 @@ def compute_specificity_score_and_mismatch_neighborhoods(sequence_data, final_he
 																							3: 0}, {}, {1: 0, 2: 0,
 																										3: 0}
 
-		for i in query_sequence:
+		for i in query_sequences:
 			# occurrence of sequence in genome
 			ot_sequence_occurence = int(query_db(kmer_dictionary_cursor,i[0]))
 
