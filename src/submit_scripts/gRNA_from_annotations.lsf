@@ -2,12 +2,12 @@
 #BSUB -J mm10_guide_test
 #BSUB -n 1
 #BSUB -R rusage[mem=100]
-#BSUB -W 72:00
+#BSUB -W 24:00
 #BSUB -o %J.stdout
 #BSUB -eo %J.stderr
 
 # set up env, cd to source
-annotations="/data/leslie/zamparol/crisprML/genomes/mm10/mm10_annotation_cds_exon_number.bed"
+annotations="/home/zamparol/projects/crisprML/data/annotations/mm10_exons_by_symbol_fol.bed"
 infile="/data/leslie/zamparol/crisprML/kmers/mm10/Cas9/mm10_all_kmers.txt"
 outdir="/data/leslie/zamparol/crisprML/results/gRNAs/mm10/"
 
@@ -19,4 +19,3 @@ source activate py2
 python gRNA_from_annotations.py -a $annotations -i $infile -o $outdir
 source deactivate
 set -o nounset
-bash post_move_to_warm.sh
