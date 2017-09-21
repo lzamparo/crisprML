@@ -32,10 +32,10 @@ print("Working on partition ", partition_num)
 for count, guide in enumerate(lines[1:]):
     guide = guide.strip()
     print(guide, file=part_file)
-    if count > lines_per_partition:
+    if (count + 1) % lines_per_partition == 0:
         part_file.close()
         partition_num = partition_num + 1
-        part_file = new_part_file(infile, partition_number, header)
+        part_file = new_part_file(infile, partition_num, header)
         print("Working on partition ", partition_num)
 
 # close the remainind partition file
