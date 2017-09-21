@@ -1,10 +1,10 @@
+from __future__ import print_function
 import os
 import sys
-from __future__ import print_function
+
 
 infile = sys.argv[1]
 partitions = sys.argv[2]
-
 
 
 # read the lines
