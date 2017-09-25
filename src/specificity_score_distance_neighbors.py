@@ -322,6 +322,8 @@ def compute_specificity_score_and_mismatch_neighborhoods(sequence_data, final_he
 		# sequence array value
 		on_target_sequence_value = on_target_sequence
 
+		print "Processing guide " + str(j)
+
 		# guidescan format
 		if cpf1:
 			on_target_sequence = 'TTTN%s' % (on_target_sequence)
