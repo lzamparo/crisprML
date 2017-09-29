@@ -16,6 +16,7 @@ __author__ = 'Alexendar Perez'
 
 import sys
 import argparse
+import pdb
 
 #########################
 #                       #
@@ -98,9 +99,11 @@ def extract_candidate_gRNAs(in_file,enzyme):
                     if float(parts[2]) == 0.0 and float(parts[3]) == 0.0 and float(parts[4]) == 0.0 and float(
                             parts[5]) == 0.0:
                         if parts[0][0] == 'G':
+                            pdb.set_trace()
                             g_ultra.append(line)
                             ultra.append(line)
                         else:
+                            pdb.set_trace()
                             ultra.append(line)  # no duplicate or near neighbors within Hamming distance 3
                     else:
                         pass
@@ -132,6 +135,7 @@ def main():
     # extract candidate gRNAs
     g_ultra, ultra, lst_a, lst_b, lst_c = extract_candidate_gRNAs(in_file,enzyme)
 
+    pdb.set_trace()
     # write out
     with open('%s/g_ultra.txt' % outdir, 'w') as g_ultra_writeout:
         for i in g_ultra:
