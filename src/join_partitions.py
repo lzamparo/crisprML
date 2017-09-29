@@ -31,7 +31,7 @@ with open(outfile, 'w') as out:
     process_file(partfile, out, skip_header=False)
 
     # process the rest
-    for p in range(1:100):
+    for p in range(1,100):
         print('.', end='', flush=True)
         partdir = 'partition_' + str(p)
         partfile = os.path.join(partdir, make_pf_filename(p))
