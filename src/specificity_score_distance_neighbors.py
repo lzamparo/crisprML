@@ -323,6 +323,7 @@ def compute_specificity_score_and_mismatch_neighborhoods(sequence_data, final_he
 		on_target_sequence_value = on_target_sequence
 
 		print "Processing guide " + str(j)
+		sys.stdout.flush()
 
 		# guidescan format
 		if cpf1:
