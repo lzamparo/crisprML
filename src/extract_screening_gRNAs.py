@@ -86,9 +86,9 @@ def extract_candidate_gRNAs(in_file,enzyme):
             parts = clean_line.split(',')
 
             if enzyme == 'Cas9':
-                enz_val = '0.0'
-            elif enzyme == 'Cpf1':
                 enz_val = 'inf'
+            elif enzyme == 'Cpf1':
+                enz_val = '0.0'
             else:
                 sys.stderr.write('%s not recognized: enter either Cas9 or Cpf1' % enzyme)
                 return
