@@ -10,12 +10,11 @@ do
 	# make output directory
 	[[ $j =~ ^.*\_([0-9]+).txt ]]
 	partition=${BASH_REMATCH[1]}
-        outdir="$(dirname $indir)/specificity_output/partition_$partition"
+        outdir="$(dirname $indir)/specificity_output_vs_mm10/partition_$partition"
 
 	# setup job with env variables  
 	mkdir -p $outdir
-	#echo "bsub -env all, INFILE=$j, OUTDIR=$outdir < feature_generation_from_sequence.lsf"
-	bsub -env "all, INFILE=$j, OUTDIR=$outdir" < feature_generation_from_sequence.lsf
+	bsub -env "all, INFILE=$j, OUTDIR=$outdir" < mm10_feature_generation_from_sequence.lsf
 done
 
 

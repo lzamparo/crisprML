@@ -1,8 +1,8 @@
 #!/bin/bash
-#BSUB -J mm10_guides_OT_hg38
+#BSUB -J mm10_guides_OT_mm10
 #BSUB -n 1
 #BSUB -R rusage[mem=140]
-#BSUB -W 45:00
+#BSUB -W 10:00
 #BSUB -o %J.stdout
 #BSUB -eo %J.stderr
 
@@ -10,8 +10,8 @@
 # dataset sgRNA fields
 input="$INFILE"
 outdir="$OUTDIR"
-kmers="/data/leslie/zamparol/crisprML/kmers/hg38/Cas9/hg38_kmers.db"
-trie="/data/leslie/zamparol/crisprML/tries/hg38_all_trie.dat"
+kmers="/data/leslie/zamparol/crisprML/kmers/mm10/Cas9/mm10_kmers.db"
+trie="/data/leslie/zamparol/crisprML/tries/mm10_all_trie.dat"
 mismatch="/data/leslie/zamparol/crisprML/CFD_scoring/mismatch_score.pkl"
 pam="/data/leslie/zamparol/crisprML/CFD_scoring/pam_scores.pkl"
 
