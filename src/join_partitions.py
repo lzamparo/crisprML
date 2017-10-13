@@ -19,22 +19,28 @@ def process_file(filename, outhandle, skip_header=True):
             print(line, file=outhandle)
 
 
-def make_pf_filename(num):
-    return 'raw_features_computed_Cas9_sequences_fitting_annotation' + '_' + str(num) + '.csv'
+def get_pf_filename(pf_dir):
+    csvs = [f for f in os.listdir(pf_dir) if f.endswith('.csv')]
+    return csvs[0]
+    #return 'raw_features_computed_Cas9_sequences_fitting_annotation' + '_' + str(num) + '.csv'
 
 
 # read the lines
 with open(outfile, 'w') as out:
     print("Processing partition")
     # process the 0th partition
-    partfile = os.path.join('partition_0', make_pf_filename(0))
+    partfile = os.path.join('partition_0', get_pf_filename('partition_0'))
     process_file(partfile, out, skip_header=False)
 
     # process the rest
-    for p in range(1,100):
+    part_dirs = [f for f in os.listdir('.') if not f.endswith('.csv')]
+    part_dirs.sort()
+    partindex = int(part_dirs[-1].split('_')[1]) + 1
+
+    for p in range(1,partindex):
         print('.', end='', flush=True)
         partdir = 'partition_' + str(p)
-        partfile = os.path.join(partdir, make_pf_filename(p))
+        partfile = os.path.join(partdir, get_pf_filename(partdir))
         process_file(partfile, out, skip_header=True)
 
 print("aaand")
