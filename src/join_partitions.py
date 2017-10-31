@@ -34,8 +34,7 @@ with open(outfile, 'w') as out:
 
     # process the rest
     part_dirs = [f for f in os.listdir('.') if not f.endswith('.csv')]
-    part_dirs.sort()
-    partindex = int(part_dirs[-1].split('_')[1]) + 1
+    partindex = len(part_dirs)
 
     for p in range(1,partindex):
         print('.', end='', flush=True)
