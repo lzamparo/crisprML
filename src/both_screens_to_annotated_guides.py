@@ -1,5 +1,6 @@
 import pandas
 import os
+from gRNA_data_gene_check import load_pickle
 
 # load both data sets
 os.chdir(os.path.expanduser("~/projects/crisprML/data/"))
@@ -15,6 +16,7 @@ mm_table = mm_table[['sequence','Specificity_Score','Occurrences_at_Hamming_0','
 merged_scores = pandas.merge(hg_table, mm_table, on="sequence", suffixes=('_hg',"_mm"))
 
 # associate exon targeted with each guide
+gRNA_target_coordinates_annotation_dict = load_pickle("gRNA_target_coordinates_annotation_dict.pkl")
 
 # split (on targeted exon), select top 4 (if possible) min(sum_hamming_mm + sum_hamming_hg)??
 
