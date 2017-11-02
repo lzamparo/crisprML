@@ -15,10 +15,23 @@ mm_table = mm_table[['sequence','Specificity_Score','Occurrences_at_Hamming_0','
 # merge tables
 merged_scores = pandas.merge(hg_table, mm_table, on="sequence", suffixes=('_hg',"_mm"))
 
+# select those guides with no human hits for 0,1,2 mismatches && no mouse hits for 1,2 mismatches
+guide_superset = merged_scores[(merged_scores['Occurrences_at_Hamming_0_hg'] == 0.0) & (merged_scores['Occurrences_at_Hamming_1_hg'] == 0.0) & (merged_scores['Occurrences_at_Hamming_2_hg'] == 0.0) & (merged_scores['Occurrences_at_Hamming_0_mm'] == 1.0) & (merged_scores['Occurrences_at_Hamming_1_mm'] == 0.0) & (merged_scores['Occurrences_at_Hamming_2_mm'] == 0.0)]
+
 # associate exon targeted with each guide
 gRNA_target_coordinates_annotation_dict = load_pickle("gRNA_target_coordinates_annotation_dict.pkl")
 
-# split (on targeted exon), select top 4 (if possible) min(sum_hamming_mm + sum_hamming_hg)??
 
+#["chr2:35084609-35084609_['AI182371']"]
+def to_csv_rec(elem):
+    chrom = elem.split(":")[0]
+    rest = elem.split(":")[1]
+    start = rest.split("-")[0]
+    raggy = rest.split("-")[1]
+    end = raggy.split("_")[0]
+    return ','.join([chrom,start,end])
+
+
+    
 
 
