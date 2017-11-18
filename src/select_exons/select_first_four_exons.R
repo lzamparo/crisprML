@@ -1,5 +1,4 @@
 library(data.table)
-#library(dplyr)
 library(biomaRt)
 
 #source("https://bioconductor.org/biocLite.R")
@@ -30,8 +29,6 @@ setkey(gene_names_dt, ensembl_transcript_id)
 coding_exons_gene_names_dt = merge(res_dt, gene_names_dt, by.x=c("ensembl_transcript_id"), by.y=c("ensembl_transcript_id"))
 
 first_four_coding_exons_by_tx_dt = coding_exons_gene_names_dt[,  head(.SD[order(exon_chrom_start)],4), by=.(ensembl_transcript_id)]
-
-grouped_filtered_guides_to_remaining <- filtered_guides_to_remaining_exons %>% group_by(gene, transcript, exon_number) %>% top_n(-1, score_summary)
 
 #d <- data.table(mtcars, key="cyl")
 #d[, head(.SD[order(disp)], 3), by=cyl]
