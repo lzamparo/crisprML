@@ -2,7 +2,7 @@
 #BSUB -J mm10_guides_OT_hg38
 #BSUB -n 1
 #BSUB -R rusage[mem=140]
-#BSUB -W 45:00
+#BSUB -W 6:00
 #BSUB -o %J.stdout
 #BSUB -eo %J.stderr
 
@@ -15,12 +15,17 @@ trie="/data/leslie/zamparol/crisprML/tries/hg38_all_trie.dat"
 mismatch="/data/leslie/zamparol/crisprML/CFD_scoring/mismatch_score.pkl"
 pam="/data/leslie/zamparol/crisprML/CFD_scoring/pam_scores.pkl"
 
+# stage the kmers db locally
+cp $kmers /scratch/hg38_kmers.db
+kmers_local=/scratch/hg38_kmers.db
 
 cd ~/projects/crisprML/src
 
 set +o nounset
 source activate py2
-python specificity_score_distance_neighbors.py -i $input -o $outdir -k $kmers -t $trie -m $mismatch -p $pam
+python specificity_score_distance_neighbors.py -i $input -o $outdir -k $kmers_local -t $trie -m $mismatch -p $pam
 source deactivate
 set -o nounset
 
+# clear up local storage
+rm $kmers_local

@@ -2,7 +2,7 @@
 #BSUB -J mm10_guides_OT_mm10
 #BSUB -n 1
 #BSUB -R rusage[mem=140]
-#BSUB -W 45:00
+#BSUB -W 6:00
 #BSUB -o %J.stdout
 #BSUB -eo %J.stderr
 
@@ -18,9 +18,15 @@ pam="/data/leslie/zamparol/crisprML/CFD_scoring/pam_scores.pkl"
 
 cd ~/projects/crisprML/src
 
+# stage the kmers db
+cp /data/leslie/zamparol/crisprML/kmers/mm10/Cas9/mm10_kmers.db /scratch/mm10_kmers.db
+kmers_local=/scratch/mm10_kmers.db
+
 set +o nounset
 source activate py2
-python specificity_score_distance_neighbors.py -i $input -o $outdir -k $kmers -t $trie -m $mismatch -p $pam
+python specificity_score_distance_neighbors.py -i $input -o $outdir -k $kmers_local -t $trie -m $mismatch -p $pam
 source deactivate
 set -o nounset
 
+# clean up scratch
+rm /scratch/mm10_kmers.db
