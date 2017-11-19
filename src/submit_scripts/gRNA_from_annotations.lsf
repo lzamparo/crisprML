@@ -7,7 +7,7 @@
 #BSUB -eo %J.stderr
 
 # set up env, cd to source
-annotations="/home/zamparol/projects/crisprML/data/annotations/mm10_first_five_exons.bed"
+annotations="/data/leslie/zamparol/crisprML/genomes/mm10/mm10_first_four_coding_exons_ensembl.bed"
 infile="/data/leslie/zamparol/crisprML/kmers/mm10/Cas9/mm10_all_kmers.txt"
 outdir="/data/leslie/zamparol/crisprML/results/gRNAs/mm10/"
 
