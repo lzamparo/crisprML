@@ -10,7 +10,7 @@ do
 	
 	# make output directory
 	
-        outdir="$(dirname $indir)/specificity_output/$j"
+        outdir="$(dirname $indir)/specificity_output_vs_hg19/$j"
 	suffix=$(echo $j | cut -f2 -d_)
 	infile=$(echo "$indir/Cas9_sequences_fitting_annotation_$suffix.txt")
 	# setup job with env variables  
