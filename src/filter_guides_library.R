@@ -8,17 +8,17 @@ library(dplyr)
 setwd("/Users/zamparol/projects/crisprML/data")
 guide_features_mm10 = data.table(read.csv("guides/raw_features_computed_Cas9_sequences_vs_mm10.csv"))
 guide_features_mm10 = guide_features_mm10[,.(sequence, Specificity_Score,Occurrences_at_Hamming_0,Occurrences_at_Hamming_1,Occurrences_at_Hamming_2,Occurrences_at_Hamming_3)]
-guide_features_hg19 = data.table(read.csv("guides/raw_features_computed_Cas9_sequences_vs_hg19.csv"))
+guide_features_hg19 = data.table(read.csv("guides/raw_features_computed_Cas9_sequences_hg19.csv"))
 guide_features_hg19 = guide_features_hg19[,.(sequence, Specificity_Score,Occurrences_at_Hamming_0,Occurrences_at_Hamming_1,Occurrences_at_Hamming_2,Occurrences_at_Hamming_3)]
 
 ### Get the list of exons that actually overlap guide regions
-coding_exons = data.table(read.delim("annotations/mm10_first_five_exons.bed", sep="\t", header=FALSE))
-colnames(coding_exons) = c("chrom","start","end","gene","transcript", "exon_number", "total_exons")
+coding_exons = data.table(read.delim("coding_exons/mm10_first_four_coding_exons_ensembl.bed", sep="\t", header=FALSE))
+colnames(coding_exons) = c("chrom","start","end","strand","exon","transcript","gene", "transcript_start", "transcript_end")
 
 ### Maybe here is the part where I need to collapse overlapping coding regions?
 
 ### Get the map from guides to genes
-guides_to_targets = data.table(read.csv("guides/gRNA_to_target.csv", header=FALSE))
+guides_to_targets = data.table(read.csv("guides/guide_to_target_region.csv", header=FALSE))
 colnames(guides_to_targets) = c("guide", "chrom", "start", "end")
 
 ### Join the guides based on sequence
@@ -42,12 +42,12 @@ setkey(guides_to_exons, guide)
 filtered_guides_and_targets = merge(filtered_guides, guides_to_exons, by.x=c("sequence"), by.y=c("guide"))
 
 ### What is going on??  How can I have so many guides per gene, exon, exon number??
-filtered_guides_and_targets[, num_guides := .N, by = .(gene, transcript, exon_number, total_exons)]
-ufgs = unique(filtered_guides_and_targets[ , .(num_guides), by = .(gene, transcript, exon_number, total_exons)])
+filtered_guides_and_targets[, num_guides := .N, by = .(gene, transcript, exon)]
+ufgs = unique(filtered_guides_and_targets[ , .(num_guides), by = .(gene, transcript, exon)])
 
 ### How many (gene, transcript, exon) records do not have guides?
-setkey(coding_exons, gene, transcript, exon_number)
-setkey(ufgs, gene, transcript, exon_number)
+setkey(coding_exons, gene, transcript, exon)
+setkey(ufgs, gene, transcript, exon)
 merged_w_guides = merge(ufgs, coding_exons, all.y=TRUE)
 
 ### How many (gene, transcript, exon) records have guides?
