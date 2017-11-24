@@ -10,7 +10,7 @@ do
 	# make output directory
 	[[ $j =~ ^.*\_([0-9]+).txt ]]
 	partition=${BASH_REMATCH[1]}
-        outdir="$(dirname $indir)/specificity_output/partition_$partition"
+    outdir="$(dirname $indir)/specificity_output_vs_hg19/partition_$partition"
 
 	# setup job with env variables  
 	mkdir -p $outdir
