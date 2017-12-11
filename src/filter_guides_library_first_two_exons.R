@@ -51,11 +51,10 @@ setkey(filtered_guides, sequence)
 setkey(guides_to_exons, guide)
 filtered_guides_and_targets = merge(filtered_guides, guides_to_exons, by.x=c("sequence"), by.y=c("guide"))
 setnames(filtered_guides_and_targets, c("i.start", "i.end"), c("guide_start", "guide_end"))
-#saveRDS(filtered_guides_and_targets, file="../results/library/more_specific_guides_and_targets.rds")
+saveRDS(filtered_guides_and_targets, file="../results/library/more_specific_guides_and_targets.rds")
 
 ### How many guides target each exon?
 filtered_guides_and_targets[, num_guides := .N, by = .(exon)]
 
 ### What about just the guide which targets each exon, but with minimal Hamming_3 in mm?
 zug = filtered_guides_and_targets[, .SD[which.min(Occurrences_at_Hamming_3.mm)], by = .(exon)]
-
