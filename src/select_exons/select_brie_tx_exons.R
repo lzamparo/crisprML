@@ -12,6 +12,10 @@ setwd("/Users/zamparol/projects/crisprML/data")
 coding_exons = data.table(fread("coding_exons/mm10_first_four_coding_exons_ensembl.bed", sep="\t", header=TRUE))
 colnames(coding_exons) = c("chrom","start","end","strand","exon","transcript","gene", "transcript_start", "transcript_end")
 doench_guides = data.table(fread("coding_exons/broadgpp-brie-library-contents.txt", sep="\t", header=TRUE))
+### guard against different defaults in fread introducing spaces (or not replacing them with '.')
+if ("Target Transcript" %in% colnames(doench_guides)){
+  setnames(doench_guides, "Target Transcript", "Target.Transcript")
+}
 doench_guides[, transcript := tstrsplit(Target.Transcript, ".", fixed=TRUE)[[1]]]
 
 ### get the ENSEMBL transcript codes for the Brie RefSeq txs
@@ -25,7 +29,7 @@ res_dt = data.table(res)
 
 
 ### keep only the exons int the res_dt txs set
-setkey(res_dt, transcript)
+setkey(res_dt, ensembl_transcript_id)
 setkey(coding_exons, transcript)
 filtered_txs = coding_exons[transcript %in% unique(res_dt[, ensembl_transcript_id]),]
 
