@@ -8,9 +8,9 @@ cd $1
 
 output_totals=$(find . -name "*.csv" -exec wc -l {} \; | cut -f1 -d' ' | awk '{ sum += $1 } END { print sum }')
 
-# Go to directory with inputs, count up number of scored guides
+# Go to directory with outputs, count up number of scored guides
 prefix=$(dirname $1)
-suffix=$(basename $1 | sed -e 's/input/output/')
+suffix=$(basename $1 | sed -e 's/output/input/')
 cd $prefix/$suffix
 
 input_totals=$(find . -name "*.txt" -exec wc -l {} \; | cut -f1 -d' ' | awk '{ sum += $1 } END { print sum }')
