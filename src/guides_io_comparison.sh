@@ -15,4 +15,8 @@ cd $prefix/$suffix
 
 input_totals=$(find . -name "*.txt" -exec wc -l {} \; | cut -f1 -d' ' | awk '{ sum += $1 } END { print sum }')
 
-echo "Found $input_totals guides as input, and $output_totals guides as output"
+disc=$(echo "$input_totals - $output_totals"  | bc -l )
+
+echo "Found $input_totals guides as input"
+echo "Found $output_totals guides as output"
+echo "Discrepancy is $disc"
