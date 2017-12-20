@@ -51,18 +51,30 @@ filtered_guides_and_targets = merge(filtered_guides, guides_to_exons, by.x=c("se
 setnames(filtered_guides_and_targets, c("i.start", "i.end"), c("guide_start", "guide_end"))
 
 ### How many genes have at least four guides?
-#filtered_guides_and_targets[, num_guides := .N, by = .(exon)]
+filtered_guides_and_targets[, guides_per_gene := .N, by = .(gene)]
 
 ### Find the genes which need more guides
-
+genes_with_enough_guides = filtered_guides_and_targets[guides_per_gene >= 4, .N, by=gene]
+genes_needing_more_guides = filtered_guides_and_targets[guides_per_gene < 4, .N, by=gene]
+genes_with_no_guides = coding_exons[!(gene %in% genes_with_enough_guides[,gene]) & !(gene %in% genes_needing_more_guides[,gene]), .N, by=gene]
 
 ### Can we assign more quality guides to those exons such that we satisfy (2)?
-
+good_guides_for_needy_exons = filtered_guides_and_targets[gene %in% genes_needing_more_guides[,gene], .(sequence, Occurrences_at_Hamming_0.mm, Occurrences_at_Hamming_1.mm, Occurrences_at_Hamming_2.mm, Occurrences_at_Hamming_0.hg, Occurrences_at_Hamming_1.hg, Occurrences_at_Hamming_2.hg, chrom,start,end, gene), by=exon]
+good_guides_for_needy_exons[, guides_per_exon := .N, by=exon]
+good_guides_for_needy_exons[, guides_per_gene := sum(guides_per_exon), by=gene]
+recovered_genes = unique(good_guides_for_needy_exons[guides_per_gene >= 4, gene])
 
 ### If not, let's find all exons for the remaining genes, and run a separate experiment
 
 
 ### Finally, let's relax the constraints on guides for the human genome; how many genes does this allow us to cover by satisfying conditions (1), (2) ?
+relaxed_hg_guides = feature_tables[Occurrences_at_Hamming_0.hg == 0 & Occurrences_at_Hamming_1.hg == 0 & Occurrences_at_Hamming_1.mm == 0 & Occurrences_at_Hamming_2.mm == 0,]
+
+setkey(relaxed_hg_guides, sequence)
+setkey(guides_to_exons, guide)
+relaxed_guides_and_targets = merge(filtered_guides, guides_to_exons, by.x=c("sequence"), by.y=c("guide"))
+setnames(relaxed_guides_and_targets, c("i.start", "i.end"), c("guide_start", "guide_end"))
+relaxed_guides_and_targets[gene %in% genes_with_no_guides[,gene],]
 
 
 ### Write out all the guides we have chosen

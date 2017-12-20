@@ -11,6 +11,7 @@ setwd("/Users/zamparol/projects/crisprML/data")
 ### Get our table of first four coding exons for all txs, and the Brie list of txs
 coding_exons = data.table(fread("coding_exons/mm10_first_four_coding_exons_ensembl.bed", sep="\t", header=TRUE))
 colnames(coding_exons) = c("chrom","start","end","strand","exon","transcript","gene", "transcript_start", "transcript_end")
+
 doench_guides = data.table(fread("coding_exons/broadgpp-brie-library-contents.txt", sep="\t", header=TRUE))
 ### guard against different defaults in fread introducing spaces (or not replacing them with '.')
 if ("Target Transcript" %in% colnames(doench_guides)){
