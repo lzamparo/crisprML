@@ -1,16 +1,14 @@
 ### Characterize a given set of exons wrt how many guides they have per gene, of what quality, etc.
 library(data.table)
 library(ggplot2)
-library(dplyr)
-
 
 ### Get the input for guides vs mm10 and hg19
 setwd("/Users/zamparol/projects/crisprML/data")
-guide_features_mm10 = data.table(fread("guides/raw_features_computed_Cas9_sequences_vs_mm10.csv"))
+guide_features_mm10 = data.table(fread("guides/main_run/raw_features_computed_Cas9_sequences_vs_mm10.csv"))
 guide_features_mm10 = guide_features_mm10[,.(sequence, Specificity_Score,Occurrences_at_Hamming_0,Occurrences_at_Hamming_1,Occurrences_at_Hamming_2,Occurrences_at_Hamming_3)]
 guide_features_mm10 = unique(guide_features_mm10)
 
-guide_features_hg19 = data.table(fread("guides/raw_features_computed_Cas9_sequences_vs_hg19.csv"))
+guide_features_hg19 = data.table(fread("guides/main_run/raw_features_computed_Cas9_sequences_vs_hg19.csv"))
 guide_features_hg19 = guide_features_hg19[,.(sequence, Specificity_Score,Occurrences_at_Hamming_0,Occurrences_at_Hamming_1,Occurrences_at_Hamming_2,Occurrences_at_Hamming_3)]
 guide_features_hg19 = unique(guide_features_hg19)
 
@@ -20,7 +18,7 @@ colnames(coding_exons) = c("chrom","start","end","strand","exon","transcript","g
 coding_exons = unique(coding_exons)
 
 ### Get the map from guides to genes
-guides_to_targets = data.table(fread("guides/guide_to_target_region.csv", header=FALSE))
+guides_to_targets = data.table(fread("guides/main_run/guide_to_target_region.csv", header=FALSE))
 colnames(guides_to_targets) = c("guide", "chrom", "start", "end")
 
 ### Join the guides based on sequence
@@ -44,17 +42,46 @@ setkey(filtered_guides, sequence)
 setkey(guides_to_exons, guide)
 filtered_guides_and_targets = merge(filtered_guides, guides_to_exons, by.x=c("sequence"), by.y=c("guide"))
 setnames(filtered_guides_and_targets, c("i.start", "i.end"), c("guide_start", "guide_end"))
-saveRDS(filtered_guides_and_targets, file="../results/gRNAs/library/guides_and_targets_vs_brie_exons.rds")
 
-### How many guides target each exon?
-filtered_guides_and_targets[, num_guides := .N, by = .(exon)]
+### How many guides target each gene?  How many exons per gene?
+filtered_guides_and_targets[, num_guides := .N, by = .(gene)]
+genes_and_guides = unique(filtered_guides_and_targets[,.(gene, num_guides)])
+covered_genes = genes_and_guides[num_guides >= 4,gene]
+filtered_guides_and_targets[, exon_count := uniqueN(exon), by = gene]
 
 ### What about just the guide which targets each exon, but with minimal Hamming_3.mm + Hamming_3.hg?
 filtered_guides_and_targets[, hamming_3_sum := Occurrences_at_Hamming_3.mm + Occurrences_at_Hamming_3.hg]
+
+### Break down filtered_guides_and_targets by gene with 4,3,2,1 exons
+four_exons_fgt = filtered_guides_and_targets[gene %in% covered_genes & exon_count == 4,]
+three_exons_fgt = filtered_guides_and_targets[gene %in% covered_genes & exon_count == 3,]
+two_exons_fgt = filtered_guides_and_targets[gene %in% covered_genes & exon_count == 2,]
+one_exons_fgt = filtered_guides_and_targets[gene %in% covered_genes & exon_count == 1,]
+
+
+### Four: choose one guide / exon, each with minimum hamming_3_sum
+four_exon_fgt_guides = four_exons_fgt[, .SD[which.min(hamming_3_sum)], by = .(exon)]
+
+### Three: choose one guide / exon, and then the minimum hamming_3_sum of remaining guides
+three_exon_fgt_guides = three_exons_fgt[, .SD[which.min(hamming_3_sum)], by = .(exon)]
+chosen_guides = three_exon_fgt_guides[,sequence]
+additionals = three_exons_fgt[!(sequence %in% chosen_guides), .SD[head(order(hamming_3_sum),1)], by = .(transcript)]
+three_exon_fgt_guides = 
+
+### Two: choose one guide / exon, and then the smallest two hamming_3_sum of remaining guides
+two_exon_fgt_guides = two_exons_fgt[, .SD[which.min(hamming_3_sum)], by = .(exon)]
+
+### One: choose the four guides with minimal hamming_3_sum
+one_exon_fgt_guides = one_exons_fgt[, .SD[head(order(hamming_3_sum),4)], by = .(exon)]
+#d[,.SD[head(order(mpg))],by=cyl]
+
+
 min_off_target_guides_per_exon = filtered_guides_and_targets[, .SD[which.min(hamming_3_sum)], by = .(exon)]
 ggplot(min_off_target_guides_per_exon, aes(x=hamming_3_sum)) + geom_histogram(bins=100) + xlim(0,100) + xlab("Number of matches with up to 3 mismatches in hg19 + mm10") + ylab("# guides") + ggtitle("Histogram of Brie exome guide specificity")
 
-### How do we explain that some exons have no good guides?
+### Select the min off-target guides that target exons in covered genes
+good_guides = min_off_target_guides_per_exon[gene %in% covered_genes,.(sequence,chrom,start,end,strand,exon,transcript,gene,hamming_3_sum)]
+
 
 # number of suitable guides per exon
 g_per_e = unique(filtered_guides_and_targets[order(-num_guides),.(gene, transcript, num_guides),by=exon])
