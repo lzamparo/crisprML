@@ -2,7 +2,7 @@
 #BSUB -J mm10_guides_OT_hg38
 #BSUB -n 1
 #BSUB -R rusage[mem=140]
-#BSUB -W 9:00
+#BSUB -W 2:00
 #BSUB -o %J.stdout
 #BSUB -eo %J.stderr
 
