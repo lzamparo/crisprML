@@ -52,31 +52,47 @@ setnames(filtered_guides_and_targets, c("i.start", "i.end"), c("guide_start", "g
 ### How many genes have at least four guides?
 filtered_guides_and_targets[, guides_per_gene := .N, by = .(gene)]
 
-### Find the genes which need more guides
-genes_with_enough_guides = filtered_guides_and_targets[guides_per_gene >= 4, .N, by=gene]
-genes_needing_more_guides = filtered_guides_and_targets[guides_per_gene < 4, .N, by=gene]
-genes_with_no_guides = coding_exons[!(gene %in% genes_with_enough_guides[,gene]) & !(gene %in% genes_needing_more_guides[,gene]), .N, by=gene]
-
-### Can we assign more quality guides to those exons such that we satisfy (2)?
-good_guides_for_needy_exons = filtered_guides_and_targets[gene %in% genes_needing_more_guides[,gene], .(sequence, Occurrences_at_Hamming_0.mm, Occurrences_at_Hamming_1.mm, Occurrences_at_Hamming_2.mm, Occurrences_at_Hamming_0.hg, Occurrences_at_Hamming_1.hg, Occurrences_at_Hamming_2.hg, chrom,start,end, gene), by=exon]
-good_guides_for_needy_exons[, guides_per_exon := .N, by=exon]
-good_guides_for_needy_exons[, guides_per_gene := sum(guides_per_exon), by=gene]
-recovered_genes = unique(good_guides_for_needy_exons[guides_per_gene >= 4, gene])
-
-### If not, let's find all exons for the remaining genes, and run a separate experiment
+### How many guides target each gene?  How many exons per gene?
+### Also help score each guide by the sum of their 3-mismatch matches in human and mouse
+filtered_guides_and_targets[, num_guides := uniqueN(sequence), by = .(gene)]
+filtered_guides_and_targets[, exon_count := uniqueN(exon), by = gene]
+filtered_guides_and_targets[, hamming_3_sum := Occurrences_at_Hamming_3.mm + Occurrences_at_Hamming_3.hg]
 
 
-### Finally, let's relax the constraints on guides for the human genome; how many genes does this allow us to cover by satisfying conditions (1), (2) ?
-relaxed_hg_guides = feature_tables[Occurrences_at_Hamming_0.hg == 0 & Occurrences_at_Hamming_1.hg == 0 & Occurrences_at_Hamming_1.mm == 0 & Occurrences_at_Hamming_2.mm == 0,]
+### Break down filtered_guides_and_targets by gene with 4,3,2,1 exons
+four_exons_fgt = filtered_guides_and_targets[exon_count >= 4,]
+three_exons_fgt = filtered_guides_and_targets[exon_count == 3,]
+two_exons_fgt = filtered_guides_and_targets[exon_count == 2,]
+one_exons_fgt = filtered_guides_and_targets[exon_count == 1,]
 
-setkey(relaxed_hg_guides, sequence)
-setkey(guides_to_exons, guide)
-relaxed_guides_and_targets = merge(filtered_guides, guides_to_exons, by.x=c("sequence"), by.y=c("guide"))
-setnames(relaxed_guides_and_targets, c("i.start", "i.end"), c("guide_start", "guide_end"))
-relaxed_guides_and_targets[gene %in% genes_with_no_guides[,gene],]
+### Four: choose one guide / exon, each with minimum hamming_3_sum, first four exons by position
+four_exon_fgt_guides = four_exons_fgt[, .SD[which.min(hamming_3_sum)], by = .(exon)]
+four_exon_fgt_guides = four_exon_fgt_guides[,.(sequence, exon, transcript, gene, chrom, start, end, hamming_3_sum, guide_start, guide_end)]
+four_exon_fgt_guides = four_exon_fgt_guides[,.SD[head(order(start),4)], by = .(transcript)]
+
+### Three: choose one guide / exon, and then the minimum hamming_3_sum of remaining guides
+three_exon_fgt_guides = three_exons_fgt[, .SD[which.min(hamming_3_sum)], by = .(exon)]
+chosen_guides = three_exon_fgt_guides[,sequence]
+additionals = three_exons_fgt[!(sequence %in% chosen_guides), .SD[head(order(hamming_3_sum),1)], by = .(transcript)]
+three_exon_fgt_guides = data.table(rbind(three_exon_fgt_guides,additionals))
+three_exon_fgt_guides = three_exon_fgt_guides[,.(sequence, exon, transcript, gene, chrom, start, end, hamming_3_sum, guide_start, guide_end)]
+
+### Two: choose one guide / exon, and then the smallest two hamming_3_sum of remaining guides
+two_exon_fgt_guides = two_exons_fgt[, .SD[which.min(hamming_3_sum)], by = .(exon)]
+chosen_guides = two_exon_fgt_guides[,sequence]
+additionals = two_exons_fgt[!(sequence %in% chosen_guides), .SD[head(order(hamming_3_sum),2)], by = .(transcript)]
+two_exon_fgt_guides = data.table(rbind(two_exon_fgt_guides,additionals))
+two_exon_fgt_guides = two_exon_fgt_guides[,.(sequence, exon, transcript, gene, chrom, start, end, hamming_3_sum, guide_start, guide_end)]
 
 
-### Write out all the guides we have chosen
+### One: choose the four guides with minimal hamming_3_sum
+one_exon_fgt_guides = one_exons_fgt[, .SD[head(order(hamming_3_sum),4)], by = .(exon)]
+one_exon_fgt_guides = one_exon_fgt_guides[,.(sequence, exon, transcript, gene, chrom, start, end, hamming_3_sum, guide_start, guide_end)]
+
+### Combine all guides together, write out guides
+all_fgt_guides = data.table(rbind(four_exon_fgt_guides,three_exon_fgt_guides,two_exon_fgt_guides,one_exon_fgt_guides))
+write.csv(all_fgt_guides,file = "guides/needy_exon_run/all_fgt_guides.csv", row.names=FALSE)
+
 
 
 

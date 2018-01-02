@@ -2,16 +2,14 @@
 
 library(data.table)
 library(ggplot2)
-library(dplyr)
-
 
 ### Get the input for guides vs mm10 and hg19
 setwd("/Users/zamparol/projects/crisprML/data")
-guide_features_mm10 = data.table(fread("guides/raw_features_computed_Cas9_sequences_vs_mm10.csv"))
+guide_features_mm10 = data.table(fread("guides/main_run/raw_features_computed_Cas9_sequences_vs_mm10.csv"))
 guide_features_mm10 = guide_features_mm10[,.(sequence, Specificity_Score,Occurrences_at_Hamming_0,Occurrences_at_Hamming_1,Occurrences_at_Hamming_2,Occurrences_at_Hamming_3)]
 guide_features_mm10 = unique(guide_features_mm10)
 
-guide_features_hg19 = data.table(fread("guides/raw_features_computed_Cas9_sequences_vs_hg19.csv"))
+guide_features_hg19 = data.table(fread("guides/main_run/raw_features_computed_Cas9_sequences_vs_hg19.csv"))
 guide_features_hg19 = guide_features_hg19[,.(sequence, Specificity_Score,Occurrences_at_Hamming_0,Occurrences_at_Hamming_1,Occurrences_at_Hamming_2,Occurrences_at_Hamming_3)]
 guide_features_hg19 = unique(guide_features_hg19)
 
@@ -21,7 +19,7 @@ colnames(coding_exons) = c("chrom","start","end","strand","exon","transcript","g
 coding_exons = unique(coding_exons)
 
 ### Get the map from guides to genes
-guides_to_targets = data.table(fread("guides/guide_to_target_region.csv", header=FALSE))
+guides_to_targets = data.table(fread("guides/main_run/guide_to_target_region.csv", header=FALSE))
 colnames(guides_to_targets) = c("guide", "chrom", "start", "end")
 
 ### Join the guides based on sequence
@@ -52,32 +50,12 @@ setnames(filtered_guides_and_targets, c("i.start", "i.end"), c("guide_start", "g
 
 ### How many genes have at least four guides?
 filtered_guides_and_targets[, guides_per_gene := .N, by = .(gene)]
-
-### Find the genes which need more guides
 genes_with_enough_guides = filtered_guides_and_targets[guides_per_gene >= 4, .N, by=gene]
-genes_needing_more_guides = filtered_guides_and_targets[guides_per_gene < 4, .N, by=gene]
-genes_with_no_guides = coding_exons[!(gene %in% genes_with_enough_guides[,gene]) & !(gene %in% genes_needing_more_guides[,gene]), .N, by=gene]
 
-### Can we assign more quality guides to those exons such that we satisfy (2)?
-good_guides_for_needy_exons = filtered_guides_and_targets[gene %in% genes_needing_more_guides[,gene], .(sequence, Occurrences_at_Hamming_0.mm, Occurrences_at_Hamming_1.mm, Occurrences_at_Hamming_2.mm, Occurrences_at_Hamming_0.hg, Occurrences_at_Hamming_1.hg, Occurrences_at_Hamming_2.hg, chrom,start,end, gene), by=exon]
-good_guides_for_needy_exons[, guides_per_exon := .N, by=exon]
-good_guides_for_needy_exons[, guides_per_gene := sum(guides_per_exon), by=gene]
-recovered_genes = unique(good_guides_for_needy_exons[guides_per_gene >= 4, gene])
-
-### If not, let's find all exons for the remaining genes, and run a separate experiment
+### Write out all the guides for those genes which have a complement of four guides / gene
+good_guides_for_needy_exons = filtered_guides_and_targets[gene %in% genes_with_enough_guides[,gene], .(sequence, chrom, start, end, exon, transcript, gene)]
 
 
-### Finally, let's relax the constraints on guides for the human genome; how many genes does this allow us to cover by satisfying conditions (1), (2) ?
-relaxed_hg_guides = feature_tables[Occurrences_at_Hamming_0.hg == 0 & Occurrences_at_Hamming_1.hg == 0 & Occurrences_at_Hamming_1.mm == 0 & Occurrences_at_Hamming_2.mm == 0,]
-
-setkey(relaxed_hg_guides, sequence)
-setkey(guides_to_exons, guide)
-relaxed_guides_and_targets = merge(filtered_guides, guides_to_exons, by.x=c("sequence"), by.y=c("guide"))
-setnames(relaxed_guides_and_targets, c("i.start", "i.end"), c("guide_start", "guide_end"))
-relaxed_guides_and_targets[gene %in% genes_with_no_guides[,gene],]
-
-
-### Write out all the guides we have chosen
 
 
 
