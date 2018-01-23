@@ -28,16 +28,17 @@ setkey(guide_features_hg19, sequence)
 feature_tables = merge(x=guide_features_hg19, y=guide_features_mm10, by.x="sequence", by.y="sequence", suffixes=c(".hg", ".mm"))
 
 ### Filter guides based on having 0 occurrences in Hg at hamming_0, 1, 2 && 1 occurrrence in MM at hamming_0 but none at hamming_1, 2
-#filtered_guides_strict = feature_tables[Occurrences_at_Hamming_0.hg == 0 & Occurrences_at_Hamming_1.hg == 0 & Occurrences_at_Hamming_2.hg == 0 & Occurrences_at_Hamming_0.mm == 1 & Occurrences_at_Hamming_1.mm == 0 & Occurrences_at_Hamming_2.mm == 0,]
+#filtered_guides = feature_tables[Occurrences_at_Hamming_0.hg == 0 & Occurrences_at_Hamming_1.hg == 0 & Occurrences_at_Hamming_2.hg == 0 & Occurrences_at_Hamming_0.mm == 1 & Occurrences_at_Hamming_1.mm == 0 & Occurrences_at_Hamming_2.mm == 0,]
 
 ### Filter guides based on having 0 ocurrences in hg19 at Hamming_0 && 1 occurrrence in mm10 at hamming_0 but none at hamming_1, 2
 filtered_guides = feature_tables[Occurrences_at_Hamming_0.hg == 0 & Occurrences_at_Hamming_0.mm == 1 & Occurrences_at_Hamming_1.mm == 0 & Occurrences_at_Hamming_2.mm == 0,]
-filtered_guides = filtered_guides[(!grepl(BamHI_filter, sequence)) & (!grepl(BlpI_filter, sequence)) & !(grepl(BstXI_filter, sequence)),]
 
 ### Eliminate guides which have subsequences that create matches with the restiction enzymes we use
 BamHI_filter = "^[G]?ATCC"
 BlpI_filter = "^CT[ACGT]{1}AGC"
 BstXI_filter = "CCA[ACGT]{6}TG$"
+
+filtered_guides = filtered_guides[(!grepl(BamHI_filter, sequence)) & (!grepl(BlpI_filter, sequence)) & !(grepl(BstXI_filter, sequence)),]
 
 ### tidy up environment
 rm(guide_features_mm10, guide_features_hg19)
@@ -57,12 +58,9 @@ setkey(guides_to_exons, guide)
 filtered_guides_and_targets = merge(filtered_guides, guides_to_exons, by.x=c("sequence"), by.y=c("guide"))
 setnames(filtered_guides_and_targets, c("i.start", "i.end"), c("guide_start", "guide_end"))
 
-### How many genes have at least four guides?
-filtered_guides_and_targets[, guides_per_gene := .N, by = .(gene)]
 
 ### How many guides target each gene?  How many exons per gene?
 ### Also help score each guide by the sum of their 3-mismatch matches in human and mouse
-filtered_guides_and_targets[, num_guides := uniqueN(sequence), by = .(gene)]
 filtered_guides_and_targets[, exon_count := uniqueN(exon), by = gene]
 filtered_guides_and_targets[, hamming_3_sum := Occurrences_at_Hamming_3.mm + Occurrences_at_Hamming_3.hg]
 
@@ -99,8 +97,23 @@ one_exon_fgt_guides = one_exon_fgt_guides[,.(sequence, exon, transcript, gene, c
 
 ### Combine all guides together, write out guides
 all_fgt_guides = data.table(rbind(four_exon_fgt_guides,three_exon_fgt_guides,two_exon_fgt_guides,one_exon_fgt_guides))
-write.csv(all_fgt_guides,file = "guides/needy_exon_run/all_fgt_guides.csv", row.names=FALSE)
+write.csv(all_fgt_guides,file = "guides/needy_exon_run/all_fgt_guides_nobaddies.csv", row.names=FALSE)
 
+### Plots which present the number of guides / gene gained by relaxing constaints on hg19
+### N.B: do not run in sequence. The strict selection results and lax seletion results are derived from separate runs.
 
+all_fgt_guides[, guides_per_tx := .N, by=transcript]
+txs_per_gene = unique(all_fgt_guides[,.(transcript, guides_per_tx)])
+all_gt = unique(coding_exons[, gene, by=transcript])
 
+guides_per_tx = merge(all_gt, txs_per_gene, by=c("transcript"), all.x=TRUE)
+guides_per_tx[is.na(guides_per_tx), guides_per_tx := 0]
 
+strict_selection_results = guides_per_tx
+strict_selection_results[, selection := "strict"]
+
+lax_selection_results = guides_per_tx
+lax_selection_results[, selection := "relaxed"]
+
+guides_improvement = data.table(rbind(strict_selection_results, lax_selection_results))
+p1 = ggplot(guides_improvement, aes(x=guides_per_tx, fill=selection)) + geom_bar(position="dodge") + xlab("# guides per gene") + ylab("Number of genes")  +  ggtitle("Suitable guides per gene: 1371 genes total (all exons considered)")
