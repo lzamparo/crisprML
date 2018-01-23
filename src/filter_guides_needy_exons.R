@@ -1,5 +1,4 @@
 ### Characterize a given set of exons wrt how many guides they have per gene, of what quality, etc.
-
 library(data.table)
 library(ggplot2)
 
@@ -33,6 +32,12 @@ feature_tables = merge(x=guide_features_hg19, y=guide_features_mm10, by.x="seque
 
 ### Filter guides based on having 0 ocurrences in hg19 at Hamming_0 && 1 occurrrence in mm10 at hamming_0 but none at hamming_1, 2
 filtered_guides = feature_tables[Occurrences_at_Hamming_0.hg == 0 & Occurrences_at_Hamming_0.mm == 1 & Occurrences_at_Hamming_1.mm == 0 & Occurrences_at_Hamming_2.mm == 0,]
+filtered_guides = filtered_guides[(!grepl(BamHI_filter, sequence)) & (!grepl(BlpI_filter, sequence)) & !(grepl(BstXI_filter, sequence)),]
+
+### Eliminate guides which have subsequences that create matches with the restiction enzymes we use
+BamHI_filter = "^[G]?ATCC"
+BlpI_filter = "^CT[ACGT]{1}AGC"
+BstXI_filter = "CCA[ACGT]{6}TG$"
 
 ### tidy up environment
 rm(guide_features_mm10, guide_features_hg19)
