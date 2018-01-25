@@ -5,11 +5,11 @@ library(ggplot2)
 
 ### Get the input for guides vs mm10 and hg19
 setwd("/Users/zamparol/projects/crisprML/data")
-guide_features_mm10 = data.table(fread("guides/needy_exon_run/raw_features_computed_Cas9_sequences_vs_mm10.csv"))
+guide_features_mm10 = data.table(fread("guides/later_needy_exon_run/raw_features_computed_Cas9_sequences_vs_mm10.csv"))
 guide_features_mm10 = guide_features_mm10[,.(sequence, Specificity_Score,Occurrences_at_Hamming_0,Occurrences_at_Hamming_1,Occurrences_at_Hamming_2,Occurrences_at_Hamming_3)]
 guide_features_mm10 = unique(guide_features_mm10)
 
-guide_features_hg19 = data.table(fread("guides/needy_exon_run/raw_features_computed_Cas9_sequences_vs_hg19.csv"))
+guide_features_hg19 = data.table(fread("guides/later_needy_exon_run/raw_features_computed_Cas9_sequences_vs_hg19.csv"))
 guide_features_hg19 = guide_features_hg19[,.(sequence, Specificity_Score,Occurrences_at_Hamming_0,Occurrences_at_Hamming_1,Occurrences_at_Hamming_2,Occurrences_at_Hamming_3)]
 guide_features_hg19 = unique(guide_features_hg19)
 
@@ -19,7 +19,7 @@ colnames(coding_exons) = c("chrom","start","end","strand","exon","transcript", "
 coding_exons = unique(coding_exons)
 
 ### Get the map from guides to genes
-guides_to_targets = data.table(fread("guides/needy_exon_run/guide_to_target_region.csv", header=FALSE))
+guides_to_targets = data.table(fread("guides/later_needy_exon_run/guide_to_target_region.csv", header=FALSE))
 colnames(guides_to_targets) = c("guide", "chrom", "start", "end","strand")
 
 ### Join the guides based on sequence
@@ -31,7 +31,13 @@ feature_tables = merge(x=guide_features_hg19, y=guide_features_mm10, by.x="seque
 #filtered_guides = feature_tables[Occurrences_at_Hamming_0.hg == 0 & Occurrences_at_Hamming_1.hg == 0 & Occurrences_at_Hamming_2.hg == 0 & Occurrences_at_Hamming_0.mm == 1 & Occurrences_at_Hamming_1.mm == 0 & Occurrences_at_Hamming_2.mm == 0,]
 
 ### Filter guides based on having 0 ocurrences in hg19 at Hamming_0 && 1 occurrrence in mm10 at hamming_0 but none at hamming_1, 2
-filtered_guides = feature_tables[Occurrences_at_Hamming_0.hg == 0 & Occurrences_at_Hamming_0.mm == 1 & Occurrences_at_Hamming_1.mm == 0 & Occurrences_at_Hamming_2.mm == 0,]
+#filtered_guides = feature_tables[Occurrences_at_Hamming_0.hg == 0 & Occurrences_at_Hamming_0.mm == 1 & Occurrences_at_Hamming_1.mm == 0 & Occurrences_at_Hamming_2.mm == 0,]
+
+### Filter guides based only on restrictions in mm10
+#filtered_guides = feature_tables[Occurrences_at_Hamming_0.mm == 1 & Occurrences_at_Hamming_1.mm == 0 & Occurrences_at_Hamming_2.mm == 0,]
+
+### Filter guides based on relaxed restrictions in mm10
+filtered_guides = feature_tables[Occurrences_at_Hamming_0.mm == 1 & Occurrences_at_Hamming_1.mm == 0,]
 
 ### Eliminate guides which have subsequences that create matches with the restiction enzymes we use
 BamHI_filter = "^[G]?ATCC"
@@ -97,7 +103,7 @@ one_exon_fgt_guides = one_exon_fgt_guides[,.(sequence, exon, transcript, gene, c
 
 ### Combine all guides together, write out guides
 all_fgt_guides = data.table(rbind(four_exon_fgt_guides,three_exon_fgt_guides,two_exon_fgt_guides,one_exon_fgt_guides))
-write.csv(all_fgt_guides,file = "guides/needy_exon_run/all_fgt_guides_nobaddies.csv", row.names=FALSE)
+#write.csv(all_fgt_guides,file = "guides/needy_exon_run/all_fgt_guides_nobaddies.csv", row.names=FALSE)
 
 ### Plots which present the number of guides / gene gained by relaxing constaints on hg19
 ### N.B: do not run in sequence. The strict selection results and lax seletion results are derived from separate runs.
@@ -109,11 +115,19 @@ all_gt = unique(coding_exons[, gene, by=transcript])
 guides_per_tx = merge(all_gt, txs_per_gene, by=c("transcript"), all.x=TRUE)
 guides_per_tx[is.na(guides_per_tx), guides_per_tx := 0]
 
-strict_selection_results = guides_per_tx
-strict_selection_results[, selection := "strict"]
+#strict_selection_results = guides_per_tx
+#strict_selection_results[, selection := "zero hg19 match at 0,1,2"]
 
-lax_selection_results = guides_per_tx
-lax_selection_results[, selection := "relaxed"]
+#lax_selection_results = guides_per_tx
+#lax_selection_results[, selection := "zero hg19 match at 0"]
+ 
+#really_lax_selection_results = guides_per_tx
+#really_lax_selection_results[, selection := "no hg19 restriction"]
+ 
+supremely_lax_selection_results = guides_per_tx
+supremely_lax_selection_results[, selection := "no hg19 restriction, zero mm10 match at 0,1"]
 
-guides_improvement = data.table(rbind(strict_selection_results, lax_selection_results))
+guides_improvement = data.table(rbind(strict_selection_results, lax_selection_results, really_lax_selection_results, supremely_lax_selection_results))
 p1 = ggplot(guides_improvement, aes(x=guides_per_tx, fill=selection)) + geom_bar(position="dodge") + xlab("# guides per gene") + ylab("Number of genes")  +  ggtitle("Suitable guides per gene: 1371 genes total (all exons considered)")
+
+
