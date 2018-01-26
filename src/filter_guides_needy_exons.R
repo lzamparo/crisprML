@@ -28,22 +28,23 @@ setkey(guide_features_hg19, sequence)
 feature_tables = merge(x=guide_features_hg19, y=guide_features_mm10, by.x="sequence", by.y="sequence", suffixes=c(".hg", ".mm"))
 
 ### Filter guides based on having 0 occurrences in Hg at hamming_0, 1, 2 && 1 occurrrence in MM at hamming_0 but none at hamming_1, 2
-#filtered_guides = feature_tables[Occurrences_at_Hamming_0.hg == 0 & Occurrences_at_Hamming_1.hg == 0 & Occurrences_at_Hamming_2.hg == 0 & Occurrences_at_Hamming_0.mm == 1 & Occurrences_at_Hamming_1.mm == 0 & Occurrences_at_Hamming_2.mm == 0,]
+filtered_guides_1 = feature_tables[Occurrences_at_Hamming_0.hg == 0 & Occurrences_at_Hamming_1.hg == 0 & Occurrences_at_Hamming_2.hg == 0 & Occurrences_at_Hamming_0.mm == 1 & Occurrences_at_Hamming_1.mm == 0 & Occurrences_at_Hamming_2.mm == 0,]
 
 ### Filter guides based on having 0 ocurrences in hg19 at Hamming_0 && 1 occurrrence in mm10 at hamming_0 but none at hamming_1, 2
-#filtered_guides = feature_tables[Occurrences_at_Hamming_0.hg == 0 & Occurrences_at_Hamming_0.mm == 1 & Occurrences_at_Hamming_1.mm == 0 & Occurrences_at_Hamming_2.mm == 0,]
+filtered_guides_2 = feature_tables[Occurrences_at_Hamming_0.hg == 0 & Occurrences_at_Hamming_0.mm == 1 & Occurrences_at_Hamming_1.mm == 0 & Occurrences_at_Hamming_2.mm == 0,]
 
 ### Filter guides based only on restrictions in mm10
-#filtered_guides = feature_tables[Occurrences_at_Hamming_0.mm == 1 & Occurrences_at_Hamming_1.mm == 0 & Occurrences_at_Hamming_2.mm == 0,]
+filtered_guides_3 = feature_tables[Occurrences_at_Hamming_0.mm == 1 & Occurrences_at_Hamming_1.mm == 0 & Occurrences_at_Hamming_2.mm == 0,]
 
 ### Filter guides based on relaxed restrictions in mm10
-filtered_guides = feature_tables[Occurrences_at_Hamming_0.mm == 1 & Occurrences_at_Hamming_1.mm == 0,]
+filtered_guides_4 = feature_tables[Occurrences_at_Hamming_0.mm == 1 & Occurrences_at_Hamming_1.mm == 0,]
 
 ### Eliminate guides which have subsequences that create matches with the restiction enzymes we use
 BamHI_filter = "^[G]?ATCC"
 BlpI_filter = "^CT[ACGT]{1}AGC"
 BstXI_filter = "CCA[ACGT]{6}TG$"
 
+filtered_guides = unique(data.table(rbind(filtered_guides_1,filtered_guides_2,filtered_guides_3,filtered_guides_4)))
 filtered_guides = filtered_guides[(!grepl(BamHI_filter, sequence)) & (!grepl(BlpI_filter, sequence)) & !(grepl(BstXI_filter, sequence)),]
 
 ### tidy up environment
@@ -79,7 +80,7 @@ one_exons_fgt = filtered_guides_and_targets[exon_count == 1,]
 
 ### Four: choose one guide / exon, each with minimum hamming_3_sum, first four exons by position
 four_exon_fgt_guides = four_exons_fgt[, .SD[which.min(hamming_3_sum)], by = .(exon)]
-four_exon_fgt_guides = four_exon_fgt_guides[,.(sequence, exon, transcript, gene, chrom, start, end, hamming_3_sum, guide_start, guide_end)]
+four_exon_fgt_guides = four_exon_fgt_guides[,.(sequence, exon, transcript, gene, chrom, start, end, Occurrences_at_Hamming_2.mm, Occurrences_at_Hamming_2.hg, Occurrences_at_Hamming_1.hg, Occurrences_at_Hamming_0.hg, hamming_3_sum, guide_start, guide_end)]
 four_exon_fgt_guides = four_exon_fgt_guides[,.SD[head(order(start),4)], by = .(transcript)]
 
 ### Three: choose one guide / exon, and then the minimum hamming_3_sum of remaining guides
@@ -87,19 +88,37 @@ three_exon_fgt_guides = three_exons_fgt[, .SD[which.min(hamming_3_sum)], by = .(
 chosen_guides = three_exon_fgt_guides[,sequence]
 additionals = three_exons_fgt[!(sequence %in% chosen_guides), .SD[head(order(hamming_3_sum),1)], by = .(transcript)]
 three_exon_fgt_guides = data.table(rbind(three_exon_fgt_guides,additionals))
-three_exon_fgt_guides = three_exon_fgt_guides[,.(sequence, exon, transcript, gene, chrom, start, end, hamming_3_sum, guide_start, guide_end)]
+three_exon_fgt_guides = three_exon_fgt_guides[,.(sequence, exon, transcript, gene, chrom, start, end, Occurrences_at_Hamming_2.mm, Occurrences_at_Hamming_2.hg, Occurrences_at_Hamming_1.hg, Occurrences_at_Hamming_0.hg, hamming_3_sum, guide_start, guide_end)]
 
 ### Two: choose one guide / exon, and then the smallest two hamming_3_sum of remaining guides
 two_exon_fgt_guides = two_exons_fgt[, .SD[which.min(hamming_3_sum)], by = .(exon)]
 chosen_guides = two_exon_fgt_guides[,sequence]
 additionals = two_exons_fgt[!(sequence %in% chosen_guides), .SD[head(order(hamming_3_sum),2)], by = .(transcript)]
 two_exon_fgt_guides = data.table(rbind(two_exon_fgt_guides,additionals))
-two_exon_fgt_guides = two_exon_fgt_guides[,.(sequence, exon, transcript, gene, chrom, start, end, hamming_3_sum, guide_start, guide_end)]
+two_exon_fgt_guides = two_exon_fgt_guides[,.(sequence, exon, transcript, gene, chrom, start, end, Occurrences_at_Hamming_2.mm, Occurrences_at_Hamming_2.hg, Occurrences_at_Hamming_1.hg, Occurrences_at_Hamming_0.hg, hamming_3_sum, guide_start, guide_end)]
 
 
 ### One: choose the four guides with minimal hamming_3_sum
 one_exon_fgt_guides = one_exons_fgt[, .SD[head(order(hamming_3_sum),4)], by = .(exon)]
-one_exon_fgt_guides = one_exon_fgt_guides[,.(sequence, exon, transcript, gene, chrom, start, end, hamming_3_sum, guide_start, guide_end)]
+one_exon_fgt_guides = one_exon_fgt_guides[,.(sequence, exon, transcript, gene, chrom, start, end, Occurrences_at_Hamming_2.mm, Occurrences_at_Hamming_2.hg, Occurrences_at_Hamming_1.hg, Occurrences_at_Hamming_0.hg, hamming_3_sum, guide_start, guide_end)]
+
+
+### Validate number of guides / gene
+four_exon_fgt_guides[,guides_per_gene := uniqueN(sequence),by=gene]
+four_exon_fgt_guides[guides_per_gene < 4,]
+
+three_exon_fgt_guides[, guides_per_gene := uniqueN(sequence),by=gene]
+three_exon_fgt_guides[guides_per_gene < 4, uniqueN(gene)]
+
+two_exon_fgt_guides[,guides_per_gene := uniqueN(sequence),by=gene]
+two_exon_fgt_guides[guides_per_gene < 4, uniqueN(gene)]
+
+one_exon_fgt_guides[,guides_per_gene := uniqueN(sequence),by=gene]
+one_exon_fgt_guides[guides_per_gene < 4, uniqueN(gene)]
+
+### Figure out how to show discrepancy:
+
+
 
 ### Combine all guides together, write out guides
 all_fgt_guides = data.table(rbind(four_exon_fgt_guides,three_exon_fgt_guides,two_exon_fgt_guides,one_exon_fgt_guides))

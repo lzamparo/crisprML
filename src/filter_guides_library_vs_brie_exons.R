@@ -34,6 +34,7 @@ feature_tables = merge(x=guide_features_hg19, y=guide_features_mm10, by.x="seque
 ### Filter guides based on having 0 ocurrences in hg19 at Hamming_0 && 1 occurrrence in mm10 at hamming_0 but none at hamming_1, 2
 filtered_guides = feature_tables[Occurrences_at_Hamming_0.hg == 0 & Occurrences_at_Hamming_0.mm == 1 & Occurrences_at_Hamming_1.mm == 0 & Occurrences_at_Hamming_2.mm == 0,]
 
+
 ### Eliminate guides which have subsequences that create matches with the restiction enzymes we use
 BamHI_filter = "^[G]?ATCC"
 BlpI_filter = "^CT[ACGT]{1}AGC"
@@ -96,7 +97,11 @@ one_exon_fgt_guides = one_exon_fgt_guides[,.(sequence, exon, transcript, gene, c
 
 ### join, write out guides
 all_fgt_guides = data.table(rbind(four_exon_fgt_guides,three_exon_fgt_guides,two_exon_fgt_guides,one_exon_fgt_guides))
-write.csv(all_fgt_guides,file = "guides/main_run/all_fgt_guides_nobaddies.csv", row.names=FALSE)
+
+currdir = getwd()
+setwd("~/projects/crisprML/results/library")
+write.csv(all_fgt_guides,file = "main_run_four_guides_per_gene.csv", row.names=FALSE)
+setwd(currdir)
 
 ### write out exons needing more guides
 all_fgt_guides[, guides_per_tx := .N, by=transcript]
@@ -106,6 +111,8 @@ all_gt = unique(coding_exons[, gene, by=transcript])
 guides_per_tx = merge(all_gt, txs_per_gene, by=c("transcript"), all.x=TRUE)
 guides_per_tx[is.na(guides_per_tx), guides_per_tx := 0]
 write.csv(guides_per_tx[guides_per_tx < 4,], "coding_exons/txs_needing_more_guides.csv", row.names=FALSE)
+
+
 
 ### Plots which present the number of guides / gene gained by relaxing constaints on hg19
 ### N.B: do not run in sequence. The strict selection results and lax seletion results are derived from separate runs.
