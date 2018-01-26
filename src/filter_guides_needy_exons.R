@@ -1,6 +1,7 @@
 ### Characterize a given set of exons wrt how many guides they have per gene, of what quality, etc.
 library(data.table)
 library(ggplot2)
+library(gridExtra)
 
 
 ### Get the input for guides vs mm10 and hg19
@@ -106,23 +107,34 @@ one_exon_fgt_guides = one_exon_fgt_guides[,.(sequence, exon, transcript, gene, c
 ### Validate number of guides / gene
 four_exon_fgt_guides[,guides_per_gene := uniqueN(sequence),by=gene]
 four_exon_fgt_guides[guides_per_gene < 4,]
+p4 = ggplot(four_exon_fgt_guides[, uniqueN(sequence), by=transcript], aes(x=V1)) + geom_bar(position="dodge") + ggtitle("Genes with four or more exons") + scale_x_continuous(name="Guides per transcript", breaks = c(0,1,2,3,4), labels = c("0","1","2","3","4"))
 
 three_exon_fgt_guides[, guides_per_gene := uniqueN(sequence),by=gene]
 three_exon_fgt_guides[guides_per_gene < 4, uniqueN(gene)]
+p3 = ggplot(three_exon_fgt_guides[, uniqueN(sequence), by=transcript], aes(x=V1)) + geom_bar(position="dodge") + ggtitle("Genes with three exons") + scale_x_continuous(name="Guides per transcript", breaks = c(0,1,2,3,4), labels = c("0","1","2","3","4"))
 
 two_exon_fgt_guides[,guides_per_gene := uniqueN(sequence),by=gene]
 two_exon_fgt_guides[guides_per_gene < 4, uniqueN(gene)]
+p2 = ggplot(two_exon_fgt_guides[, uniqueN(sequence), by=transcript], aes(x=V1)) + geom_bar(position="dodge") + ggtitle("Genes with two exons") + scale_x_continuous(name="Guides per transcript", breaks = c(0,1,2,3,4), labels = c("0","1","2","3","4"))
 
 one_exon_fgt_guides[,guides_per_gene := uniqueN(sequence),by=gene]
 one_exon_fgt_guides[guides_per_gene < 4, uniqueN(gene)]
+p1 = ggplot(one_exon_fgt_guides[, uniqueN(sequence), by=transcript], aes(x=V1)) + geom_bar(position="dodge") + ggtitle("Genes with one exons") + scale_x_continuous(name="Guides per transcript", breaks = c(0,1,2,3,4), labels = c("0","1","2","3","4"))
+
+tx_vs_exons_multifig_list = list(p4,p3,p2,p1)
 
 ### Figure out how to show discrepancy:
-
+curr_dir = getwd()
+setwd("~/projects/crisprML/results/figures/")
+pdf(file = "guides_per_tx_by_complexity.pdf")
+grid.arrange(grobs=tx_vs_exons_multifig_list, ncol=2)
+dev.off()
+setwd(curr_dir)
 
 
 ### Combine all guides together, write out guides
 all_fgt_guides = data.table(rbind(four_exon_fgt_guides,three_exon_fgt_guides,two_exon_fgt_guides,one_exon_fgt_guides))
-#write.csv(all_fgt_guides,file = "guides/needy_exon_run/all_fgt_guides_nobaddies.csv", row.names=FALSE)
+write.csv(all_fgt_guides,file = "../results/library/supplementary_run.csv", row.names=FALSE)
 
 ### Plots which present the number of guides / gene gained by relaxing constaints on hg19
 ### N.B: do not run in sequence. The strict selection results and lax seletion results are derived from separate runs.
