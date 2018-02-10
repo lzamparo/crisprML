@@ -5,45 +5,46 @@ library(stringr)
 
 # load the constructs
 setwd('~/projects/crisprML/results/library/')
-construct_library = data.table(fread("library_sequences_fixed.csv"))
+construct_library = data.table(fread("construct_library.csv"))
 
 # what are the motifs for the restriction enzymes?
-BstXI_motif = "CCANNNNNNTGG"
-BamHI_motif = "GGATCC"
-BlpI_motif = "GCTNAGC"
+BamHI_filter_emergent = "^[G]?ATCC"
+BlpI_filter_emergent = "^CT[ACGT]{1}AGC"
+BstXI_filter_emergent = "CCA[ACGT]{6}TG$"
+BstXI_filter_barcode = "^CA[ACGT]{6}TGG"
 
-BstXI_match = "CCA[ACGT]{6}TGG"
-BamHI_match = BamHI_motif
-BlpI_match = "GCT[ACGT]{1}AGC"
+BstXI_filter_exact = "CCA[ACGT]{6}TGG"
+BamHI_filter_exact = "GGATCC"
+BlpI_filter_exact = "GCT[ACGT]{1}AGC"
+
+BstXI_filter_barcode = "^CA[ACGT]{6}TGG"
 
 # count occurrences in the barcodes
-construct_library[,BstXI_barcode_count := str_count(Barcode,BstXI_match)]
-construct_library[,BamHI_barcode_count := str_count(Barcode,BamHI_match)]
-construct_library[,BlpI_barcode_count := str_count(Barcode,BlpI_match)]
+construct_library[,BstXI_barcode_count := str_count(Barcode,BstXI_filter_exact) + str_count(Barcode,BstXI_filter_emergent) + str_count(Barcode,BstXI_filter_barcode)]
+construct_library[,BamHI_barcode_count := str_count(Barcode,BamHI_filter_exact) + str_count(Barcode,BamHI_filter_emergent)]
+construct_library[,BlpI_barcode_count := str_count(Barcode,BlpI_filter_exact) + str_count(Barcode,BlpI_filter_emergent)]
 
 # count occurrences in the guide (Guides in the library)
-construct_library[,BstXI_guides_count := str_count(Guides,BstXI_match)]
-construct_library[,BamHI_guides_count := str_count(Guides,BamHI_match)]
-construct_library[,BlpI_guides_count := str_count(Guides,BlpI_match)]
+construct_library[,BstXI_guides_count := str_count(Guides,BstXI_filter_exact) + str_count(Guides,BstXI_filter_emergent)]
+construct_library[,BamHI_guides_count := str_count(Guides,BamHI_filter_exact) + str_count(Guides,BamHI_filter_emergent)]
+construct_library[,BlpI_guides_count := str_count(Guides,BlpI_filter_exact) + str_count(Guides,BlpI_filter_emergent)]
 
-# count occurrences outside between the scaffold, barcode and buffer
-construct_library[,BstXI_construct_count := str_count(str_to_upper(Guide),BstXI_match) - str_count(Guides,BstXI_match) - str_count(Barcode,BstXI_match)]
-construct_library[,BamHI_construct_count := str_count(str_to_upper(Guide),BamHI_match) - str_count(Guides,BamHI_match) - str_count(Barcode,BamHI_match)]
-construct_library[,BlpI_construct_count := str_count(str_to_upper(Guide),BlpI_match) - str_count(Guides,BlpI_match) - str_count(Barcode,BlpI_match)]
+# validate barcode constraints
+stopifnot(construct_library[BstXI_barcode_count > 0,.N] == 0)
+stopifnot(construct_library[BamHI_barcode_count > 0,.N] == 0)
+stopifnot(construct_library[BlpI_barcode_count > 0,.N] == 0)
 
-# find those guides or barcodes which need replacing: guide or barcode count > 0
-guide_or_barcode_count_violations = unique(construct_library[BstXI_barcode_count > 0 | BamHI_barcode_count > 0 | BlpI_barcode_count > 0 | BstXI_guides_count > 1 | BamHI_guides_count > 1 | BlpI_guides_count > 1, .(Guide, Guides, Barcode)])
+# validate guides constraints
+stopifnot(construct_library[BstXI_guides_count > 0,.N] == 0)
+stopifnot(construct_library[BamHI_guides_count > 0,.N] == 0)
+stopifnot(construct_library[BlpI_guides_count > 0,.N] == 0)
 
-# find those guides or barcodes which need replacing: construct counts > 1
-construct_counts_violations = unique(construct_library[BstXI_construct_count > 1 | BamHI_construct_count > 1 | BlpI_construct_count > 1, .(Guide, Guides, Barcode)])
+# count occurrences outside between the guide, scaffold, barcode and buffer
+construct_library[,BstXI_construct_count := str_count(str_to_upper(Constructs), BstXI_filter_exact)]
+construct_library[,BamHI_construct_count := str_count(str_to_upper(Constructs), BamHI_filter_exact)]
+construct_library[,BlpI_construct_count := str_count(str_to_upper(Constructs), BlpI_filter_exact)]
 
-# merge the two sets
-constructs_needing_work = unique(data.table(rbind(guide_or_barcode_count_violations, construct_counts_violations)))
-
-# find where the extra matches occur
-
-
-
-# for those constructs for matches in the Txsfind which Txs 
-
+stopifnot(construct_library[BstXI_construct_count > 1, .N] == 0)
+stopifnot(construct_library[BamHI_construct_count > 1, .N] == 0)
+stopifnot(construct_library[BlpI_construct_count > 1, .N] == 0)
 

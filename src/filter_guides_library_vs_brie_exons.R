@@ -32,7 +32,7 @@ feature_tables = merge(x=guide_features_hg19, y=guide_features_mm10, by.x="seque
 #filtered_guides = feature_tables[Occurrences_at_Hamming_0.hg == 0 & Occurrences_at_Hamming_1.hg == 0 & Occurrences_at_Hamming_2.hg == 0 & Occurrences_at_Hamming_0.mm == 1 & Occurrences_at_Hamming_1.mm == 0 & Occurrences_at_Hamming_2.mm == 0,]
 
 ### Filter guides based on having 0 ocurrences in hg19 at Hamming_0 && 1 occurrrence in mm10 at hamming_0 but none at hamming_1, 2
-filtered_guides = feature_tables[Occurrences_at_Hamming_0.hg == 0 & Occurrences_at_Hamming_0.mm == 1 & Occurrences_at_Hamming_1.mm == 0 & Occurrences_at_Hamming_2.mm == 0,]
+filtered_guides = feature_tables[Occurrences_at_Hamming_0.hg == 0 & Occurrences_at_Hamming_0.mm == 1,]
 
 
 ### Eliminate guides which have subsequences that create matches with the restiction enzymes we use
@@ -100,7 +100,7 @@ all_fgt_guides = data.table(rbind(four_exon_fgt_guides,three_exon_fgt_guides,two
 
 currdir = getwd()
 setwd("~/projects/crisprML/results/library")
-write.csv(all_fgt_guides,file = "main_run_four_guides_per_gene.csv", row.names=FALSE)
+write.csv(all_fgt_guides,file = "main_run_four_guides_per_gene_local.csv", row.names=FALSE)
 setwd(currdir)
 
 ### write out exons needing more guides

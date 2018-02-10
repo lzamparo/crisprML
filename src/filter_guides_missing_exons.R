@@ -6,21 +6,21 @@ library(gridExtra)
 
 ### Get the input for guides vs mm10 and hg19
 setwd("/Users/zamparol/projects/crisprML/data")
-guide_features_mm10 = data.table(fread("guides/later_needy_exon_run/raw_features_computed_Cas9_sequences_vs_mm10.csv"))
+guide_features_mm10 = data.table(fread("guides/missing_exons_run/raw_features_computed_Cas9_sequences_vs_mm10.csv"))
 guide_features_mm10 = guide_features_mm10[,.(sequence, Specificity_Score,Occurrences_at_Hamming_0,Occurrences_at_Hamming_1,Occurrences_at_Hamming_2,Occurrences_at_Hamming_3)]
 guide_features_mm10 = unique(guide_features_mm10)
 
-guide_features_hg19 = data.table(fread("guides/later_needy_exon_run/raw_features_computed_Cas9_sequences_vs_hg19.csv"))
+guide_features_hg19 = data.table(fread("guides/missing_exons_run/raw_features_computed_Cas9_sequences_vs_hg19.csv"))
 guide_features_hg19 = guide_features_hg19[,.(sequence, Specificity_Score,Occurrences_at_Hamming_0,Occurrences_at_Hamming_1,Occurrences_at_Hamming_2,Occurrences_at_Hamming_3)]
 guide_features_hg19 = unique(guide_features_hg19)
 
 ### Get the list of exons that actually overlap guide regions
-coding_exons = data.table(fread("coding_exons/mm10_needy_exons.bed", sep="\t", header=TRUE))
-colnames(coding_exons) = c("chrom","start","end","strand","exon","transcript", "transcript_start", "transcript_end", "gene")
+coding_exons = data.table(fread("coding_exons/still_no_guides.bed", sep="\t", header=TRUE))
+colnames(coding_exons) = c("chrom","start","end","strand","exon","transcript", "gene", "transcript_start", "transcript_end")
 coding_exons = unique(coding_exons)
 
 ### Get the map from guides to genes
-guides_to_targets = data.table(fread("guides/later_needy_exon_run/guide_to_target_region.csv", header=FALSE))
+guides_to_targets = data.table(fread("guides/missing_exons_run/guide_to_target_region.csv", header=FALSE))
 colnames(guides_to_targets) = c("guide", "chrom", "start", "end","strand")
 
 ### Join the guides based on sequence
@@ -134,7 +134,7 @@ setwd(curr_dir)
 
 ### Combine all guides together, write out guides
 all_fgt_guides = data.table(rbind(four_exon_fgt_guides,three_exon_fgt_guides,two_exon_fgt_guides,one_exon_fgt_guides))
-write.csv(all_fgt_guides,file = "../results/library/supplementary_run_local.csv", row.names=FALSE)
+write.csv(all_fgt_guides,file = "../results/library/missing_exon_run.csv", row.names=FALSE)
 
 ### Plots which present the number of guides / gene gained by relaxing constaints on hg19
 ### N.B: do not run in sequence. The strict selection results and lax seletion results are derived from separate runs.
@@ -151,10 +151,10 @@ guides_per_tx[is.na(guides_per_tx), guides_per_tx := 0]
 
 #lax_selection_results = guides_per_tx
 #lax_selection_results[, selection := "zero hg19 match at 0"]
- 
+
 #really_lax_selection_results = guides_per_tx
 #really_lax_selection_results[, selection := "no hg19 restriction"]
- 
+
 supremely_lax_selection_results = guides_per_tx
 supremely_lax_selection_results[, selection := "no hg19 restriction, zero mm10 match at 0,1"]
 
