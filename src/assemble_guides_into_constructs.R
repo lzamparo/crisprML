@@ -32,8 +32,9 @@ provided_xls = provided_xls[!is.na(Target),]
 
 # replace guides for non-controls with guides
 guides = guides_dt[,sequence]
+guide_names = guides_dt[, gene]
 provided_xls[is.na(`Gene ID`),Target := guides]
-provided_xls[is.na(`Gene ID`), Guides := guides]
+provided_xls[is.na(`Gene ID`), `Gene ID` := guide_names]
 
 # find & eliminate controls that have spurious matches for the restriction enzymes in the guides
 provided_xls = provided_xls[str_count(Target, BstXI_filter_exact) == 0,]
